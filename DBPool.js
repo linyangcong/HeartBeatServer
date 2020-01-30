@@ -12,7 +12,7 @@ function query(sql,callback){
             connection.release()
         })
     })
-}//对数据库进行增删改查操作的基础
+}//对数据库进行查找操作
 
 exports.loginSelect=(tablename,loginname,passworld)=>{
     return new Promise((resolve,reject)=>{
@@ -29,5 +29,15 @@ exports.searchRelationShip=(tablename='base_user',userid)=>{
             if(err) reject(err)
             resolve(rows)
         })
+    })
+}
+
+exports.updateOnline=(onlineflag,userid)=>{
+    new Promise((resolve,reject)=>{
+        query(`update base_user set onLine=${onlineflag} where userid=${userid}`,(err,status)=>{
+            if(err) reject(err)
+            resolve('sucess!')
+        })
+        
     })
 }

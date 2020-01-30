@@ -1,7 +1,7 @@
 const express = require('express');
 const express_ws = require('express-ws');
 var cors = require('cors')
-let {loginSelect,searchRelationShip} =require('./DBPool')
+let {loginSelect,searchRelationShip,updateOnline} =require('./DBPool')
 const app = express();
 const wsObj = {};
 var timer=Date.parse(new Date())/1000;
@@ -122,28 +122,15 @@ app.get('/getRelationshipList',async (req,res,next)=>{
 
 //WS服务
 let data=null;
-app.ws('/communications/:userid', (ws, req) => {
+app.ws('/communications/:userid', async (ws, req) => {
     const uid = req.params.userid;
-    // let savedata=dataList;
+    await updateOnline('1',uid)
     console.log(uid)
-    // if(data!=null){
-    //     savedata.push(data);
-    //     data=null;
-    // }
-    //     for( let i=0;i<savedata.length;i++){
-    //         if(savedata[i].userid==uid){
-    //             data=savedata[i]
-    //             savedata.splice(i,1)
-    //         }
-    //     }
-    // ws.send(JSON.stringify(savedata))
     wsObj[uid] = ws;
     ws.onmessage = (msg) => {
         // let fromname=''
         let { toId, type, data} = JSON.parse(msg.data)
         const fromId = uid;
-        console.log('22220000')
-        console.log(msg.data)
         // dataList.forEach(item=>{
         //     if(item.userid==fromId){
         //         fromname=item.name
@@ -177,6 +164,12 @@ app.ws('/communications/:userid', (ws, req) => {
         //     wsObj[toId].send(JSON.stringify( { fromId, type, data } ))
         //     wsObj[fromId].send(JSON.stringify( { toId,fromId, type, data } ))
         // }
+    }
+    ws.onclose =(e)=>{
+        console.log('ws关闭了')
+    }
+    ws.onerror=(e)=>{
+        console.log('ws出错了了')
     }
 });
 
