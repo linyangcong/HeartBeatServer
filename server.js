@@ -60,6 +60,7 @@ let loginname=req.query.loginname,passworld=req.query.passworld;
    try{
     if(loginname!=null&&loginname!=''&&passworld!=null&&passworld!='')
     {
+        console.log(loginname,passworld)
         let result= await loginSelect('base_user',loginname,passworld)
         res.send(result[0])
     }
@@ -122,11 +123,22 @@ app.get('/getRelationshipList',async (req,res,next)=>{
 
 //WS服务
 let data=null;
-app.ws('/communications/:userid', async (ws, req) => {
-    const uid = req.params.userid;
+app.ws('/communications', async (ws, req) => {
+    const uid = req.query.uid;
     await updateOnline('1',uid)
-    console.log(uid)
+    // console.log(uid)
     wsObj[uid] = ws;
+    let result= await searchRelationShip('base_user',uid)
+    // console.log(result[0].relationship.split(','))
+    result[0].relationship.split(',').map(item=>{
+        searchRelationShip('base_user',item).then(res=>{
+            // console.log(res[0].onLine)
+            if(res[0].onLine=='1'){
+                // console.log('send消息了')
+            wsObj[item].send(JSON.stringify( { nearOnlineupdate:result[0].userid } ))
+        }
+        })
+    })
     ws.onmessage = (msg) => {
         // let fromname=''
         let { toId, type, data} = JSON.parse(msg.data)
@@ -166,9 +178,19 @@ app.ws('/communications/:userid', async (ws, req) => {
         // }
     }
     ws.onclose =(e)=>{
-        console.log('ws关闭了')
+        updateOnline('0',uid)
+        searchRelationShip('base_user',uid).then(res=>{
+            res[0].relationship.split(',').map(item=>{
+                searchRelationShip('base_user',item).then(ress=>{
+                    if(ress[0].onLine=='1'){
+                    wsObj[ress[0].userid].send(JSON.stringify( { nearOfflineupdate:uid } ))
+                }
+                })
+            })
+        })
     }
     ws.onerror=(e)=>{
+        console.log(e)
         console.log('ws出错了了')
     }
 });
